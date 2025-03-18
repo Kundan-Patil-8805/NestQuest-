@@ -37,10 +37,7 @@ const PORT = process.env.PORT || 3000;
 
 async function main() {
   try {
-    await mongoose.connect(process.env.DATABASE_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.DATABASE_URL);
     console.log("Connected to the database");
 
     app.listen(PORT, () => {
