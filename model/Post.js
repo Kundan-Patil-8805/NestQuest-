@@ -15,7 +15,7 @@ const postSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   postDetail: { type: mongoose.Schema.Types.ObjectId, ref: 'PostDetail' },
- // savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SavedPost' }],
+  savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SavedPost' }],
 });
 
 export default mongoose.model('Post', postSchema);

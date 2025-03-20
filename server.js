@@ -9,6 +9,8 @@ import PostRouter from "./router/post.js";
 import authRouter from "./router/auth.js";
 import testRouter from "./router/test.js";
 import userRouter from "./router/user.js";
+import chatRouter from "./router/chat.js";
+import messageRouter from "./router/message.js";
 
 // Load environment variables
 dotenv.config();
@@ -17,10 +19,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000", // Restrict origins
-  credentials: true, // Allow cookies to be sent
-}));
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 
@@ -28,7 +27,9 @@ app.use(express.json());
 app.use("/api/post", PostRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/test", testRouter);
-app.use("/api/users", userRouter)
+app.use("/api/users", userRouter);
+app.use("/api/chats", chatRouter);
+app.use("/api/messages", messageRouter);
 
 app.use("/", (req, res) => {
   res.send("Server is running!!");
