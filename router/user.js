@@ -1,6 +1,6 @@
 import express from "express";
-import { deleteUser, getUser, getUsers, updateUser } from "../controllers/user";
-import verifyToken from "../middleware/verifyToken.js"
+import { deleteUser, getUser, getUsers, updateUser } from "../controllers/user.js";
+import {verifyToken} from "../middleware/verifyToken.js"
 
 const router = express.Router();
 

@@ -1,31 +1,79 @@
-import { json } from "express"
+import User from "../model/user.js";
+
+export const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.status(200).json({ users });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get users",
+            error: error.message,
+        });
+    }
+};
+
+export const getUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({ user });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get user",
+            error: error.message,
+        });
+    }
+};
+
+export const updateUser = async (req, res) => {
+    try {
+        const { id } = req.params; // Extract the ID from request params
+        const tokenUserId = req.userId; // Assume `req.userId` is populated by middleware
+        const { username, avatar } = req.body; // Extract username and avatar from request body
+
+        if (id !== tokenUserId) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+
+        // Update both username and avatar fields
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            { username, avatar },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ updatedUser });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to update user",
+            error: error.message,
+        });
+    }
+};
 
 
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-export const getUsers =(req,res)=>{
-    try {
-        
+        const deletedUser = await User.findByIdAndDelete(id);
+
+        if (!deletedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
-        res.status(500),json({
-            message:"faild to get users"
-        })
+        res.status(500).json({
+            message: "Failed to delete user",
+            error: error.message,
+        });
     }
-}
-export const updateUser =(req,res)=>{
-    try {
-        
-    } catch (error) {
-        res.status(500),json({
-            message:"faild to upadte user"
-        })
-    }
-}
-export const deleteUser =(req,res)=>{
-    try {
-        
-    } catch (error) {
-        res.status(500),json({
-            message:"faild to delete user"
-        })
-    }
-}
+};

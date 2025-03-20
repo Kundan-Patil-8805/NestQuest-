@@ -8,6 +8,7 @@ import cors from "cors";
 import PostRouter from "./router/post.js";
 import authRouter from "./router/auth.js";
 import testRouter from "./router/test.js";
+import userRouter from "./router/user.js";
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use("/api/post", PostRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/test", testRouter);
+app.use("/api/users", userRouter)
 
 app.use("/", (req, res) => {
   res.send("Server is running!!");
@@ -45,7 +47,7 @@ async function main() {
     });
   } catch (error) {
     console.error("Database connection error:", error);
-    process.exit(1); // Exit process with failure
+    process.exit(1); 
   }
 }
 
