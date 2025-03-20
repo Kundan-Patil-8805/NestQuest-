@@ -25,6 +25,36 @@ export const getPost = async (req, res) => {
         return res.status(404).json({ message: "Post not found" });
       }
   
+
+        let  userID;
+
+        const token = req.cookies?.token;
+
+        if (token) {
+            jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, payload) => {
+              if (!err) {
+                try {
+                  const saved = await SavedPost.findOne({
+                    userId: payload.id,
+                    postId: id, // Replace `id` with the variable that holds the post ID
+                  });
+          
+                  res.status(200).json({
+                    ...post, // Spread the post data (replace with your actual post data)
+                    isSaved: saved ? true : false,
+                  });
+                } catch (error) {
+                  res.status(500).json({ message: "Error checking saved post", error: error.message });
+                }
+              } else {
+                res.status(401).json({ message: "Invalid token" });
+              }
+            });
+          } else {
+            res.status(401).json({ message: "Token is required" });
+          }
+          
+        if(!token) 
       res.status(200).json(post);
     } catch (error) {
       res.status(500).json({

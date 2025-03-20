@@ -77,3 +77,57 @@ export const deleteUser = async (req, res) => {
         });
     }
 };
+
+
+export const savePost = async (req, res) => {
+    const postId = req.body.postId;
+    const tokenUserId = req.userId;
+  
+    try {
+      // Check if the post is already saved by the user
+      const savedPost = await SavedPost.findOne({
+        userId: tokenUserId,
+        postId: postId,
+      });
+  
+      if (savedPost) {
+        // If the post is already saved, remove it from the saved list
+        await SavedPost.findByIdAndDelete(savedPost._id);
+        res.status(200).json({ message: "Post removed from saved list" });
+      } else {
+        // If the post is not saved, save it to the list
+        const newSavedPost = new SavedPost({
+          userId: tokenUserId,
+          postId: postId,
+        });
+        await newSavedPost.save();
+        res.status(200).json({ message: "Post saved" });
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Failed to save/remove post" });
+    }
+  };
+  
+
+
+  
+  export const profilePosts = async (req, res) => {
+    const tokenUserId = req.userId; // Assuming middleware adds `userId` to the request
+  
+    try {
+      // Find posts created by the user
+      const userPosts = await Post.find({ user: tokenUserId });
+  
+      // Find posts saved by the user
+      const saved = await SavedPost.find({ user: tokenUserId }).populate("post");
+  
+      // Extract the posts from the saved entries
+      const savedPosts = saved.map((item) => item.post);
+  
+      res.status(200).json({ userPosts, savedPosts });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to get profile posts!" });
+    }
+  };
