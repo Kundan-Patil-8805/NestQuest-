@@ -1,138 +1,120 @@
-import Post from "../model/Post.js";
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import Post from "../model/Post.js"; // Assuming you have a Post model
+import SavedPost from "../model/SavedPost.js"; // Assuming you have a SavedPost model
 
-// Fetch all posts
 export const getPosts = async (req, res) => {
-    try {
-        const posts = await Post.find({});
-        res.status(200).json(posts);
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to retrieve posts",
-            error: error.message
-        });
+  try {
+    const query = req.query;
+
+    // Build the filter object
+    const filter = {};
+    
+    if (query.city) filter.city = query.city;
+    if (query.type) filter.type = query.type;
+    if (query.property) filter.property = query.property;
+    if (query.bedroom) filter.bedroom = parseInt(query.bedroom);
+
+    // Handle price range filtering
+    if (query.minPrice || query.maxPrice) {
+      filter.price = {};
+      if (query.minPrice) filter.price.$gte = parseInt(query.minPrice);
+      if (query.maxPrice) filter.price.$lte = parseInt(query.maxPrice);
     }
+
+    // Fetch posts from the database
+    const posts = await Post.find(filter);
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+    res.status(500).json({ message: "Failed to get posts", error: err.message });
+  }
 };
 
-// Fetch a single post by ID
+
 export const getPost = async (req, res) => {
-    try {
-      const { id } = req.params;
-  
-      // Find the post by ID and populate the user information
-      const post = await Post.findById(id).populate("user", "name email");
-  
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-  
+  const id = req.params.id;
+  try {
+    const post = await Post.findById(id).populate("postDetail").populate({
+      path: "user",
+      select: "username avatar",
+    });
 
-        let  userID;
+    const token = req.cookies?.token;
 
-        const token = req.cookies?.token;
-
-        if (token) {
-            jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, payload) => {
-              if (!err) {
-                try {
-                  const saved = await SavedPost.findOne({
-                    userId: payload.id,
-                    postId: id, // Replace `id` with the variable that holds the post ID
-                  });
-          
-                  res.status(200).json({
-                    ...post, // Spread the post data (replace with your actual post data)
-                    isSaved: saved ? true : false,
-                  });
-                } catch (error) {
-                  res.status(500).json({ message: "Error checking saved post", error: error.message });
-                }
-              } else {
-                res.status(401).json({ message: "Invalid token" });
-              }
-            });
-          } else {
-            res.status(401).json({ message: "Token is required" });
-          }
-          
-        if(!token) 
-      res.status(200).json(post);
-    } catch (error) {
-      res.status(500).json({
-        message: "Failed to retrieve the post",
-        error: error.message
-      });
-    }
-  };
-  
-
-// Add a new post
-export const addPost = async (req, res) => {
-    try {
-      const { postData, postdetail } = req.body;
-  
-      const user = req.userId; // Assuming middleware adds `userId` to the request
-  
-      // Create a new Post document
-      const newPost = new Post({
-        user,
-        ...postData, // Spread `postData` fields
-        postdetail   // Add `postdetail` as a nested object
-      });
-  
-      const savedPost = await newPost.save();
-      res.status(201).json(savedPost);
-    } catch (error) {
-      res.status(500).json({
-        message: "Failed to create post",
-        error: error.message
-      });
-    }
-  };
-  
-
-// Update an existing post
-export const updatePost = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
-
-        const updatedPost = await Post.findByIdAndUpdate(id, updates, { new: true });
-
-        if (!updatedPost) {
-            return res.status(404).json({ message: "Post not found" });
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, payload) => {
+        if (!err) {
+          const saved = await SavedPost.findOne({
+            postId: id,
+            userId: payload.id,
+          });
+          return res.status(200).json({ ...post.toObject(), isSaved: !!saved });
         }
-
-        res.status(200).json(updatedPost);
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to update post",
-            error: error.message
-        });
+      });
     }
+
+    res.status(200).json({ ...post.toObject(), isSaved: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get post" });
+  }
 };
-// Delete a post
+
+export const addPost = async (req, res) => {
+  const body = req.body;
+  const tokenUserId = req.userId;
+
+  try {
+    const newPost = new Post({
+      ...body.postData,
+      userId: tokenUserId,
+      postDetail: body.postDetail,
+    });
+
+    await newPost.save();
+    res.status(200).json(newPost);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to create post" });
+  }
+};
+
+export const updatePost = async (req, res) => {
+  const id = req.params.id;
+  const updateData = req.body;
+
+  try {
+    const updatedPost = await Post.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+    res.status(200).json(updatedPost);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to update post" });
+  }
+};
+
 export const deletePost = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userTokenId = req.userId;
+  const id = req.params.id;
+  const tokenUserId = req.userId;
 
-        const postToDelete = await Post.findById(id);
+  try {
+    const post = await Post.findById(id);
 
-        if (!postToDelete) {
-            return res.status(404).json({ message: "Post not found" });
-        }
-            // fixx after some time 
-        if (postToDelete.userId.toString() !== userTokenId) {
-            return res.status(403).json({ message: "Not authorized to delete this post" });
-        }
-
-        await Post.findByIdAndDelete(id);
-
-        res.status(200).json({ message: "Post deleted successfully" });
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to delete post",
-            error: error.message
-        });
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
     }
+
+    if (post.userId.toString() !== tokenUserId) {
+      return res.status(403).json({ message: "Not Authorized!" });
+    }
+
+    await Post.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Post deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete post" });
+  }
 };
