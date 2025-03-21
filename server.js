@@ -9,8 +9,8 @@ import PostRouter from "./router/post.js";
 import authRouter from "./router/auth.js";
 import testRouter from "./router/test.js";
 import userRouter from "./router/user.js";
-import chatRouter from "./router/chat.js";
-import messageRouter from "./router/message.js";
+// import chatRouter from "./router/chat.js";
+// import messageRouter from "./router/message.js";
 
 // Load environment variables
 dotenv.config();
@@ -28,8 +28,8 @@ app.use("/api/post", PostRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/test", testRouter);
 app.use("/api/users", userRouter);
-app.use("/api/chats", chatRouter);
-app.use("/api/messages", messageRouter);
+// app.use("/api/chats", chatRouter);
+// app.use("/api/messages", messageRouter);
 
 app.use("/", (req, res) => {
   res.send("Server is running!!");
