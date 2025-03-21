@@ -1,5 +1,5 @@
 import Post from "../model/Post.js";
-
+import jwt from "jsonwebtoken"
 // Fetch all posts
 export const getPosts = async (req, res) => {
     try {
@@ -13,57 +13,50 @@ export const getPosts = async (req, res) => {
     }
 };
 
-// Fetch a single post by ID
+// import jwt from "jsonwebtoken";
+
 export const getPost = async (req, res) => {
-    try {
-      const { id } = req.params;
-  
-      // Find the post by ID and populate the user information
-      const post = await Post.findById(id).populate("user", "name email");
-  
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-  
+  try {
+    const { id } = req.params;
 
-        let  userID;
+    // Find the post by ID and populate the user information
+    const post = await Post.findById(id).populate("user", "name email");
 
-        const token = req.cookies?.token;
-
-        if (token) {
-            jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, payload) => {
-              if (!err) {
-                try {
-                  const saved = await SavedPost.findOne({
-                    userId: payload.id,
-                    postId: id, // Replace `id` with the variable that holds the post ID
-                  });
-          
-                  res.status(200).json({
-                    ...post, // Spread the post data (replace with your actual post data)
-                    isSaved: saved ? true : false,
-                  });
-                } catch (error) {
-                  res.status(500).json({ message: "Error checking saved post", error: error.message });
-                }
-              } else {
-                res.status(401).json({ message: "Invalid token" });
-              }
-            });
-          } else {
-            res.status(401).json({ message: "Token is required" });
-          }
-          
-        if(!token) 
-      res.status(200).json(post);
-    } catch (error) {
-      res.status(500).json({
-        message: "Failed to retrieve the post",
-        error: error.message
-      });
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
     }
-  };
-  
+
+    const token = req.cookies?.token;
+
+    let isSaved = false;
+
+    if (token) {
+      try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+        const saved = await SavedPost.findOne({
+          userId: payload.id,
+          postId: id,
+        });
+
+        isSaved = !!saved; // Set `isSaved` to true if the post is saved
+      } catch (err) {
+        console.error("JWT verification failed:", err.message);
+        // Proceed without marking the post as saved
+      }
+    }
+
+    // Return the post with the `isSaved` flag
+    res.status(200).json({ ...post.toObject(), isSaved });
+  } catch (error) {
+    console.error("Error fetching post:", error);
+    res.status(500).json({
+      message: "Failed to retrieve the post",
+      error: error.message,
+    });
+  }
+};
+
 
 // Add a new post
 export const addPost = async (req, res) => {
