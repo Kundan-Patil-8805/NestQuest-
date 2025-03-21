@@ -131,3 +131,24 @@ export const savePost = async (req, res) => {
       res.status(500).json({ message: "Failed to get profile posts!" });
     }
   };
+
+
+  
+export const getNotificationNumber = async (req, res) => {
+    const tokenUserId = req.userId;
+  
+    try {
+      const number = await Chat.countDocuments({
+        userIDs: { $in: [tokenUserId] },
+        seenBy: { $ne: tokenUserId }, // Check if tokenUserId is not in the seenBy array
+      });
+  
+      res.status(200).json({ status: "success", number });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
+        status: "error",
+        message: "Failed to get notification count!",
+      });
+    }
+  };
