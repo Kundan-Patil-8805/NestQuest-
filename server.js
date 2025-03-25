@@ -9,8 +9,8 @@ import PostRouter from "./router/post.js";
 import authRouter from "./router/auth.js";
 import testRouter from "./router/test.js";
 import userRouter from "./router/user.js";
-// import chatRouter from "./router/chat.js";
-// import messageRouter from "./router/message.js";
+import chatRouter from "./router/chat.js";
+import messageRouter from "./router/message.js"; // Fixed casing for consistency
 
 // Load environment variables
 dotenv.config();
@@ -23,33 +23,36 @@ app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 
-// Routes
-app.use("/api/post", PostRouter);
+// API Routes
+app.use("/api/posts", PostRouter); // Consistent route naming
 app.use("/api/auth", authRouter);
-app.use("/api/test", testRouter);
+app.use("/api/tests", testRouter);
 app.use("/api/users", userRouter);
-// app.use("/api/chats", chatRouter);
-// app.use("/api/messages", messageRouter);
+app.use("/api/chats", chatRouter);
+app.use("/api/messages", messageRouter);
 
-app.use("/", (req, res) => {
-  res.send("Server is running!!");
+// Fallback route
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" }); // More descriptive for missing routes
 });
 
 // Database connection and server start
 const PORT = process.env.PORT || 3000;
 
-async function main() {
+const main = async () => {
   try {
-    await mongoose.connect(process.env.DATABASE_URL);
+    await mongoose.connect(process.env.DATABASE_URL
+   );
     console.log("Connected to the database");
 
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`Server is running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error("Database connection error:", error);
-    process.exit(1); 
+    console.error("Database connection error:", error.message);
+    process.exit(1); // Exit process if unable to connect to DB
   }
-}
+};
 
+// Run the main function
 main();

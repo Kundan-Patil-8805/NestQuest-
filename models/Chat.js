@@ -7,5 +7,5 @@ const chatSchema = new mongoose.Schema({
   messages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }],
   lastMessage: { type: String, default: null },
 });
-
-export default mongoose.model('Chat', chatSchema);
+const Chat = mongoose.model('Chat', chatSchema);
+export default Chat;
